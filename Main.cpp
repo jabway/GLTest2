@@ -1,6 +1,7 @@
 #include "Framework.h"
 #include "ShaderProgram.h"
 #include "Vertex.h"
+#include "VertexArrayObject.h"
 
 using namespace std;
 
@@ -10,13 +11,13 @@ void logUnredirect();
 void RenderFunction(void);
 
 void Cleanup(void);
-void CreateVBO(void);
-void DestroyVBO(void);
 
 // Variables
 streambuf *ferrbuf, *errbackup, *foutbuf, *outbackup;
 ofstream ferrstr, foutstr;
 unsigned frameCount = 0;
+
+VertexArrayObject *VAO;
 
 GLuint
     VaoId,
@@ -55,7 +56,7 @@ int main()
     glfwSetWindowTitle( "Tutorial 01" );
 
     // Create VBO
-    CreateVBO();
+    VAO = new VertexArrayObject();
 
     // Black background
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -71,7 +72,7 @@ int main()
         // Enable depth test
         glEnable(GL_DEPTH_TEST);
 
-        glDrawElements(GL_TRIANGLES, 48, GL_UNSIGNED_BYTE, NULL);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, NULL);
 
         // Swap buffers
         glfwSwapBuffers();
@@ -80,7 +81,7 @@ int main()
     while( glfwGetKey( GLFW_KEY_ESC ) != GLFW_PRESS &&
     glfwGetWindowParam( GLFW_OPENED ) );
 
-    DestroyVBO();
+    Cleanup();
 
     logUnredirect();
 }
@@ -111,7 +112,7 @@ void logUnredirect()
 
 void Cleanup(void)
 {
-    DestroyVBO();
+    delete VAO;
 }
 
 void RenderFunction()
@@ -119,118 +120,3 @@ void RenderFunction()
  return;
 }
 
-void CreateVBO(void)
-{
-    Vertex Vertices[] =
-    {
-        { { 0.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
-        // Top
-        { { -0.2f, 0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { 0.2f, 0.8f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { 0.0f, 0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-        { { 0.0f, 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-        // Bottom
-        { { -0.2f, -0.8f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { 0.2f, -0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { 0.0f, -0.8f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-        { { 0.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-        // Left
-        { { -0.8f, -0.2f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { -0.8f, 0.2f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { -0.8f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-        { { -1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-        // Right
-        { { 0.8f, -0.2f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
-        { { 0.8f, 0.2f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { 0.8f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
-        { { 1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } }
-    };
-
-    GLubyte Indices[] = {
-        // Top
-        0, 1, 3,
-        0, 3, 2,
-        3, 1, 4,
-        3, 4, 2,
-        // Bottom
-        0, 5, 7,
-        0, 7, 6,
-        7, 5, 8,
-        7, 8, 6,
-        // Left
-        0, 9, 11,
-        0, 11, 10,
-        11, 9, 12,
-        11, 12, 10,
-        // Right
-        0, 13, 15,
-        0, 15, 14,
-        15, 13, 16,
-        15, 16, 14
-    };
-
-    GLenum ErrorCheckValue = glGetError();
-    const size_t BufferSize = sizeof(Vertices);
-    const size_t VertexSize = sizeof(Vertices[0]);
-    const size_t RgbOffset = sizeof(Vertices[0].XYZW);
-
-    glGenBuffers(1, &BufferId);
-
-    glGenVertexArrays(1, &VaoId);
-    glBindVertexArray(VaoId);
-
-    glBindBuffer(GL_ARRAY_BUFFER, BufferId);
-    glBufferData(GL_ARRAY_BUFFER, BufferSize, Vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
-
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    glGenBuffers(1, &IndexBufferId);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
-
-    ErrorCheckValue = glGetError();
-    if (ErrorCheckValue != GL_NO_ERROR)
-    {
-        fprintf(
-            stderr,
-            "ERROR: Could not create a VBO: %s \n",
-            gluErrorString(ErrorCheckValue)
-        );
-
-        exit(-1);
-    }
-}
-
-void DestroyVBO(void)
-{
-    GLenum ErrorCheckValue = glGetError();
-
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glDeleteBuffers(1, &BufferId);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &IndexBufferId);
-
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &VaoId);
-
-    ErrorCheckValue = glGetError();
-    if (ErrorCheckValue != GL_NO_ERROR)
-    {
-        fprintf(
-            stderr,
-            "ERROR: Could not destroy the VBO: %s \n",
-            gluErrorString(ErrorCheckValue)
-        );
-
-        exit(-1);
-    }
-}
