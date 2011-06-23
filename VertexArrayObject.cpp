@@ -16,39 +16,19 @@ VertexArrayObject::VertexArrayObject()
         { { -1.0f, -1.0f, 1.0f, 1.0f }, { -1.0f, -1.0f, 1.0f, 1.0f } }
     };
 
-    GLubyte Indices[] = {
-        // Top
-        0, 1, 2,
-        0, 3, 2,
-        // Bottom
-        4, 5, 6,
-        4, 7, 6,
-        // Left
-        3, 2, 6,
-        3, 7, 6,
-        // Right
-        0, 1, 5,
-        0, 4, 5,
-        // Front
-        0, 3, 4,
-        3, 7, 4,
-        // Back
-        1, 2, 6,
-        1, 5, 6
-    };
-
     GLenum ErrorCheckValue = glGetError();
     const size_t BufferSize = sizeof(Vertices);
     const size_t VertexSize = sizeof(Vertices[0]);
     const size_t RgbOffset = sizeof(Vertices[0].XYZW);
 
-    glGenBuffers(1, &VboId);
+//    glGenBuffers(1, &VboId);
 
     glGenVertexArrays(1, &VaoId);
     glBindVertexArray(VaoId);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VboId);
-    glBufferData(GL_ARRAY_BUFFER, BufferSize, Vertices, GL_STATIC_DRAW);
+//    glBindBuffer(GL_ARRAY_BUFFER, VboId);
+//    glBufferData(GL_ARRAY_BUFFER, BufferSize, Vertices, GL_STATIC_DRAW);
+    VBO = new VertexBufferObject();
 
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, VertexSize, 0);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, VertexSize, (GLvoid*)RgbOffset);
@@ -57,9 +37,6 @@ VertexArrayObject::VertexArrayObject()
     glEnableVertexAttribArray(1);
 
     // Create IBO
-//    glGenBuffers(1, &IndexBufferId);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferId);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
     IBO = new IndexBufferObject();
 
     ErrorCheckValue = glGetError();
@@ -82,12 +59,14 @@ VertexArrayObject::~VertexArrayObject()
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+//    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glDeleteBuffers(1, &VboId);
+//    glDeleteBuffers(1, &VboId);
+    if(VBO)
+        delete VBO;
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glDeleteBuffers(1, &IndexBufferId);
+    if(IBO)
+        delete IBO;
 
     glBindVertexArray(0);
     glDeleteVertexArrays(1, &VaoId);

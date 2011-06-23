@@ -8,7 +8,8 @@ HEADERS += \
     Vertex.h \
     VertexArrayObject.h \
     BufferObject.h \
-    IndexBufferObject.h
+    IndexBufferObject.h \
+    VertexBufferObject.h
 
 SOURCES += \
     Main.cpp \
@@ -18,4 +19,5 @@ SOURCES += \
     FragmentShader.cpp \
     VertexArrayObject.cpp \
     BufferObject.cpp \
-    IndexBufferObject.cpp
+    IndexBufferObject.cpp \
+    VertexBufferObject.cpp

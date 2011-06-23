@@ -4,13 +4,15 @@
 #include "Framework.h"
 #include "Vertex.h"
 #include "IndexBufferObject.h"
+#include "VertexBufferObject.h"
 
 class VertexArrayObject
 {
 private:
     GLuint  VboId,
-            VaoId,
-            IndexBufferId;
+            VaoId;
+
+    VertexBufferObject * VBO;
     IndexBufferObject *IBO;
 public:
     VertexArrayObject();
