@@ -23,6 +23,7 @@ public:
     void setView(glm::vec3 cameraLocation, glm::vec3 focus, glm::vec3 upVector);
     void Link();
     void Use();
+    void Disable();
 
 
 };

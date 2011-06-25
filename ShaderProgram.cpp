@@ -28,7 +28,7 @@ ShaderProgram::ShaderProgram(string vertexShaderFile,
     fs = new FragmentShader(fragmentShaderFile);
 
     setPerspective(45.0f, 4.0f/3.0f, 0.1f, 100.0f);
-    setView(glm::vec3(4,3,3), // Camera is at (4,3,3), in World Space
+    setView(glm::vec3(-9,15,20), // Camera is at (4,3,3), in World Space
             glm::vec3(0,0,0), // and looks at the origin
             glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down
             );
@@ -103,6 +103,8 @@ void ShaderProgram::Link()
 
 void ShaderProgram::Use()
 {
+    glUseProgram(ID);
+
     // Model matrix : an identity matrix (model will be at the origin)
     Model      = glm::mat4(1.0f);  // Changes for each model !
     // Our ModelViewProjection : multiplication of our 3 matrices
@@ -126,6 +128,9 @@ void ShaderProgram::Use()
     glUniformMatrix4fv(ModelID, 1, GL_FALSE, &Model[0][0]);
     glUniformMatrix4fv(ViewID, 1, GL_FALSE, &View[0][0]);
     glUniformMatrix4fv(ProjID, 1, GL_FALSE, &Projection[0][0]);
+}
 
-    glUseProgram(ID);
+void ShaderProgram::Disable()
+{
+    glUseProgram(0);
 }

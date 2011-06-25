@@ -9,7 +9,10 @@ HEADERS += \
     VertexArrayObject.h \
     BufferObject.h \
     IndexBufferObject.h \
-    VertexBufferObject.h
+    VertexBufferObject.h \
+    OBJLoader.h \
+    AssimpLoader.h \
+    OGLContext.h
 
 SOURCES += \
     Main.cpp \
@@ -20,4 +23,7 @@ SOURCES += \
     VertexArrayObject.cpp \
     BufferObject.cpp \
     IndexBufferObject.cpp \
-    VertexBufferObject.cpp
+    VertexBufferObject.cpp \
+    OBJLoader.cpp \
+    AssimpLoader.cpp \
+    OGLContext.cpp

@@ -21,10 +21,17 @@ using namespace glm;
 #include <fstream>
 #include <vector>
 #include <map>
+#include <cstring>
+#include <math.h>
 using namespace std;
 
 // Include tinyXML
 //#include <tinyxml.h>
+
+#include <assimp/assimp.hpp>      // C++ importer interface
+#include <assimp/aiScene.h>       // Output data structure
+#include <assimp/aiPostProcess.h> // Post processing flags
+using namespace Assimp;
 
 
 #endif // FRAMEWORK_H

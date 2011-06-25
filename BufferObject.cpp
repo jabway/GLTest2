@@ -7,8 +7,22 @@ BufferObject::BufferObject() : Target(GL_ARRAY_BUFFER)
 
 void BufferObject::Generate()
 {
+    GLenum ErrorCheckValue = glGetError();
+
     glGenBuffers(1, &BufferId);
     glBindBuffer(Target, BufferId);
+
+    ErrorCheckValue = glGetError();
+    if (ErrorCheckValue != GL_NO_ERROR)
+    {
+        fprintf(
+            stderr,
+            "ERROR: Could not create a BO: %s \n",
+            gluErrorString(ErrorCheckValue)
+        );
+
+        exit(-1);
+    }
 }
 
 BufferObject::~BufferObject()

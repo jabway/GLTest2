@@ -5,18 +5,19 @@
 #include "Vertex.h"
 #include "IndexBufferObject.h"
 #include "VertexBufferObject.h"
+#include "OBJLoader.h"
 
 class VertexArrayObject
 {
 private:
-    GLuint  VboId,
-            VaoId;
+    GLuint  VaoId;
 
     VertexBufferObject * VBO;
     IndexBufferObject *IBO;
 public:
     VertexArrayObject();
     ~VertexArrayObject();
+    void Draw();
 };
 
 #endif // VERTEXARRAYOBJECT_H
