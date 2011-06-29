@@ -14,6 +14,8 @@
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/swizzle.hpp>s
 using namespace glm;
 
 #include <iostream>
@@ -24,6 +26,9 @@ using namespace glm;
 #include <cstring>
 #include <math.h>
 using namespace std;
+
+// Include IL
+#include "IL/il.h"
 
 // Include tinyXML
 //#include <tinyxml.h>

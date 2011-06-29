@@ -2,13 +2,14 @@
 
 OBJLoader::OBJLoader()
 {
+    startIndex = 0;
 }
 
 OBJLoader::OBJLoader(string Filename)
 {
+    startIndex = 0;
     Load(Filename);
     CalculateNormals();
-    //CreateVertices();
 }
 
 void OBJLoader::Load(string Filename)
@@ -34,7 +35,7 @@ void OBJLoader::Load(string Filename)
         if( line.find("v ") != string::npos ){
 
             char c;
-            glm::vec4 PosVec;
+            glm::vec3 PosVec;
 
             if( ( iss >> c >> PosVec[0] >> PosVec[1] >> PosVec[2]).fail() )
             {
@@ -42,19 +43,38 @@ void OBJLoader::Load(string Filename)
                 return;
             }
 
-            PosVec[3] = 1.0f;
+            //PosVec[3] = 1.0f;
             Position.push_back(PosVec[0]);
             Position.push_back(PosVec[1]);
             Position.push_back(PosVec[2]);
-            Position.push_back(PosVec[3]);
-            Color.push_back(1.0f);
-            Color.push_back(1.0f);
-            Color.push_back(0.0f);
-            Color.push_back(1.0f);
+            //Position.push_back(PosVec[3]);
+            Color.push_back(0.9f);
+            Color.push_back(0.9f);
+            Color.push_back(0.9f);
+            //Color.push_back(1.0f);
         }else if(line.find("vn ") != string::npos){
+            char c;
+            glm::vec3 NormVec;
 
+            if( ( iss >> c >> NormVec[0] >> NormVec[1] >> NormVec[2]).fail() )
+            {
+                cerr << "Could not parse normal" << endl;
+                return;
+            }
+
+            Normal.push_back(NormVec[0]);
+            Normal.push_back(NormVec[1]);
+            Normal.push_back(NormVec[2]);
         }else if(line.find("vt ") != string::npos){
 
+        }else if(line.find("s ") != string::npos){
+            char c;
+
+            if( ( iss >> c >> startIndex).fail() )
+            {
+                cerr << "Could not parse start index" << endl;
+                return;
+            }
         }else if(line.find("f ") != string::npos){
 
             char c;
@@ -66,45 +86,53 @@ void OBJLoader::Load(string Filename)
                 return;
             }
 
-            Indices.push_back(IndexVec[0] - 1);
-            Indices.push_back(IndexVec[1] - 1);
-            Indices.push_back(IndexVec[2] - 1);
+            if(IndexVec[0] == IndexVec[1] || IndexVec[0] == IndexVec[2] ||
+                    IndexVec[1] == IndexVec[2])
+            {
+                cerr << "Got a degenerate triangle "  << endl;
+                break;
+            }
+
+            Indices.push_back(IndexVec[0] - startIndex);
+            Indices.push_back(IndexVec[1] - startIndex);
+            Indices.push_back(IndexVec[2] - startIndex);
         }
     }
-    int NumUnique = Position.size() / 4;
+    int NumUnique = Position.size() / 3;
 
     Normal.assign(NumUnique * 3, 0.0f);
 
     OBJFile.close();
 }
 
+
 void OBJLoader::CalculateNormals()
 {
-    if(Indices.size() < 3 || Position.size() < 12)
+    if(Indices.size() < 3 || Position.size() < 9)
     {
         cerr << "Can't calculate normals" << endl;
         return;
     }
 
-    int NumFaces = Indices.size() / 3;
-    int NumUnique = Position.size() / 4;
+    int Numindices = Indices.size();
+    int NumUnique = Position.size() / 3;
     //Normal = vector<GLfloat>(NumUnique * 3, 0.0f);
     Normal.assign(NumUnique * 3, 0.0f);
 
-    for(int i = 0; i < NumFaces; i++)
+    for(int i = 0; i < Numindices; i+=3)
     {
-        int p0 = Indices[i] * 4;
-        int p1 = Indices[i+1] * 4;
-        int p2 = Indices[i+2] * 4;
+        int p0 = Indices[i] * 3;
+        int p1 = Indices[i+1] * 3;
+        int p2 = Indices[i+2] * 3;
 
         int n0 = Indices[i] * 3;
         int n1 = Indices[i+1] * 3;
         int n2 = Indices[i+2] * 3;
         vec3 FaceNorm;
 
-        if(n0 == n1 || n0 == n2 || n1 == n2)
+        if(p0 == p1 || p0 == p2 || p1 == p2)
         {
-            cerr << "Got a degenerate face " << i << endl;
+            cerr << "Got a degenerate triangle " << i << endl;
             continue;
         }
 
@@ -114,7 +142,7 @@ void OBJLoader::CalculateNormals()
         vec3 ca = c - a;
         vec3 cb = c - b;
 
-        FaceNorm = glm::normalize(glm::cross( ca, cb) );
+        FaceNorm = glm::cross( ca, cb);
 
 
 
@@ -141,7 +169,7 @@ void OBJLoader::CalculateNormals()
 
     for(int i = 0; i < NumUnique; i++)
     {
-        int p = i * 4;
+        int p = i * 3;
         int n = i * 3;
 
         vec3 a(Normal[n], Normal[n+1], Normal[n+2]);
@@ -153,14 +181,11 @@ void OBJLoader::CalculateNormals()
             isnan( aNorm[2]) )
         {
             //aNorm = vec3(0.577350269f, 0.577350269f, 0.577350269f);
-            aNorm = vec3(0.0f, 0.0f, 1.0f);
+            aNorm = vec3(Normal[n-3], Normal[n-2], Normal[n-1]);
+            //aNorm = vec3(0.0f, 0.0f, 0.0f);
+            //vec4 pos(Position[p])
             //aNorm = a;
             cerr << "Got a NaN for normal " << i << endl;
-        }
-
-        if( aNorm == vec3(0.0f, 0.0f, 0.0f))
-        {
-            aNorm = vec3(0.0f, 0.0f, 1.0f);
         }
 
         Normal[n] = aNorm[0];
@@ -168,45 +193,26 @@ void OBJLoader::CalculateNormals()
         Normal[n+2] = aNorm[2];
     }
 
-    CreateVertices(Vertices);
-
     cout << "Done calculating normals" << endl;
 }
 
-void OBJLoader::CreateVertices(vector<Vertex> &_Vertices)
+
+vector<GLfloat>& OBJLoader::GetPosition()
 {
-
-    int NumUnique = Position.size() / 4;
-    for(int i = 0; i < NumUnique; i++)
-    {
-        int p = i * 4;
-        int n = i * 3;
-
-        vec3 a(Normal[n], Normal[n+1], Normal[n+2]);
-
-        Vertex v;
-        v.XYZW = { Position[p], Position[p+1], Position[p+2], Position[p+3] };
-        v.Normal = { a[0], a[1], a[2] };
-        v.RGBA = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-        _Vertices.push_back(v);
-    }
+    return Position;
 }
 
-void OBJLoader::Store(Vertex *outVertices, int *VertSize, GLuint *outIndices, int *IndexSize)
+vector<GLfloat>& OBJLoader::GetNormal()
 {
-    outVertices = &Vertices[0];
-    *VertSize = Vertices.size();
-    outIndices = &Indices[0];
-    *IndexSize = Indices.size();
+    return Normal;
 }
 
-vector<Vertex> OBJLoader::GetVertices()
+vector<GLfloat>& OBJLoader::GetColor()
 {
-    return Vertices;
+    return Color;
 }
 
-vector<GLuint> OBJLoader::GetIndices()
+vector<GLuint>& OBJLoader::GetIndices()
 {
     return Indices;
 }

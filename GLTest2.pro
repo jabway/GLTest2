@@ -12,7 +12,11 @@ HEADERS += \
     VertexBufferObject.h \
     OBJLoader.h \
     AssimpLoader.h \
-    OGLContext.h
+    OGLContext.h \
+    Matrices.h \
+    Lights.h \
+    BufferObjectData.h \
+    ShaderMaterial.h
 
 SOURCES += \
     Main.cpp \
@@ -26,4 +30,8 @@ SOURCES += \
     VertexBufferObject.cpp \
     OBJLoader.cpp \
     AssimpLoader.cpp \
-    OGLContext.cpp
+    OGLContext.cpp \
+    Matrices.cpp \
+    Lights.cpp \
+    BufferObjectData.cpp \
+    ShaderMaterial.cpp

@@ -12,20 +12,19 @@ private:
                     Color;
 
     vector<GLuint> Indices;
-    vector<Vertex> Vertices;
+    int startIndex;
 public:
     OBJLoader();
     OBJLoader(string Filename);
 
     void Load(string Filename);
     void CalculateNormals();
-    void CreateVertices(vector<Vertex> &_Vertices);
-    void Store(Vertex * outVertices,
-               int * VertSize,
-               GLuint * outIndices,
-               int * IndexSize);
-    vector<Vertex> GetVertices();
-    vector<GLuint> GetIndices();
+
+    vector<GLfloat>& GetPosition();
+    vector<GLfloat>& GetNormal();
+    vector<GLfloat>& GetColor();
+
+    vector<GLuint>& GetIndices();
 };
 
 #endif // OBJLOADER_H

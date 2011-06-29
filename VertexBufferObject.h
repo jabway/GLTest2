@@ -8,8 +8,7 @@ class VertexBufferObject : public BufferObject
 {
 public:
     VertexBufferObject();
-    VertexBufferObject(const Vertex * Vertices, int BufferSize);
-    VertexBufferObject(const vector<Vertex> Vertices);
+    VertexBufferObject(const vector<GLfloat> BufferData, int attribSize, int attribute);
 };
 
 #endif // VERTEXBUFFEROBJECT_H
