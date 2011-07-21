@@ -5,6 +5,60 @@ mat4 aiMatrix4ToMat4(aiMatrix4x4 in);
 AssimpLoader::AssimpLoader()
 {
     scaleFactor = 1.0f;
+    GLSceneMeshes = NULL;
+}
+
+void AssimpLoader::constructScene()
+{
+    if(!scene)
+        return;
+    GLSceneMeshes = new SceneMesh();
+
+    aiNode * root = scene->mRootNode;
+
+    for(int i = 0; i < root->mNumMeshes; i++)
+    {
+        Mesh temp = getMesh( root->mMeshes[i]);
+        GLSceneMeshes->AddMesh(temp);
+        GLSceneMeshes->SetModelMatrix(temp.GetModelMatrix());
+    }
+
+    // Temporary array for node children
+    vector<aiNode*> childArray;
+
+    for(int j = 0; j < root->mNumChildren; j++)
+    {
+        childArray.push_back( root->mChildren[j]);
+        SceneMesh * temp = constructSceneHelper(root->mChildren[j]);
+        GLSceneMeshes->AddChild(temp);
+    }
+}
+
+SceneMesh * AssimpLoader::constructSceneHelper(aiNode * node)
+{
+    if(!node)
+        return NULL;
+
+    SceneMesh * current = new SceneMesh();
+
+    for(int i = 0; i < node->mNumMeshes; i++)
+    {
+        Mesh temp = getMesh( node->mMeshes[i]);
+        current->AddMesh(temp);
+        current->SetModelMatrix(temp.GetModelMatrix());
+    }
+
+    // Temporary array for node children
+    vector<aiNode*> childArray;
+
+    for(int j = 0; j < node->mNumChildren; j++)
+    {
+        childArray.push_back( node->mChildren[j]);
+        SceneMesh * temp = constructSceneHelper(node->mChildren[j]);
+        current->AddChild(temp);
+    }
+
+    return current;
 }
 
 void AssimpLoader::get_bounding_box_for_node(const aiNode *nd,
@@ -58,7 +112,8 @@ bool AssimpLoader::Import3DFromFile( const std::string& pFile)
         return false;
     }
 
-    scene = importer.ReadFile( pFile, aiProcessPreset_TargetRealtime_Quality);
+    // Have to use aiProcess_OptimizeGraph to make sure nodes are created
+    scene = importer.ReadFile( pFile, aiProcessPreset_TargetRealtime_Quality | aiProcess_OptimizeGraph);
 
     // If the import failed, report it
     if( !scene)
@@ -76,9 +131,12 @@ bool AssimpLoader::Import3DFromFile( const std::string& pFile)
     tmp = scene_max.x-scene_min.x;
     tmp = scene_max.y - scene_min.y > tmp?scene_max.y - scene_min.y:tmp;
     tmp = scene_max.z - scene_min.z > tmp?scene_max.z - scene_min.z:tmp;
-    scaleFactor = 8.0f / tmp;
+    scaleFactor = 200.0f / tmp;
 
+    // Load textures before scene
     LoadGLTextures();
+
+    constructScene();
     // We're done. Everything will be cleaned up by the importer destructor
     return true;
 }
@@ -95,83 +153,208 @@ void AssimpLoader::genVAOsAndUniformBuffer()
 
     for(int n = 0; n < scene->mNumMeshes; n++)
     {
-        struct aiMesh* mesh = scene->mMeshes[n];
-        VertexArrayObject* VAO;
 
-        // Create vector for indices
-        vector<GLuint> Indices;
-        BufferObjectData Bod;
-
-        for(int t = 0; t < mesh->mNumFaces; t++)
-        {
-            int faceIndex = t * 3;
-
-            Indices.push_back(mesh->mFaces[t].mIndices[0]);
-            Indices.push_back(mesh->mFaces[t].mIndices[1]);
-            Indices.push_back(mesh->mFaces[t].mIndices[2]);
-        }
-
-        VAO = new VertexArrayObject();
-        if(!VAO)
-            return;
-
-        if(mesh->HasPositions())
-        {
-            vector<GLfloat> Positions;
-            for(int v = 0; v < mesh->mNumVertices; v++)
-            {
-
-                Positions.push_back(mesh->mVertices[v].x * scaleFactor);
-                Positions.push_back(mesh->mVertices[v].y * scaleFactor);
-                Positions.push_back(mesh->mVertices[v].z * scaleFactor);
-            }
-
-            Bod.AddAttribute(Positions, 3, 0);
-        }
-
-        if(mesh->HasNormals())
-        {
-            vector<GLfloat> Normals;
-            for(int v = 0; v < mesh->mNumVertices; v++)
-            {
-                Normals.push_back(mesh->mNormals[v].x);
-                Normals.push_back(mesh->mNormals[v].y);
-                Normals.push_back(mesh->mNormals[v].z);
-            }
-
-
-            Bod.AddAttribute(Normals, 3, 1);
-        }
-
-        vector<GLfloat> Colors(mesh->mNumVertices * 3, 0.9);
-        Bod.AddAttribute(Colors, 3, 2);
-
-        VAO->BindBuffers(Bod, Indices);
-        VAO->AttachShader("shader.vert", "shader.frag");
-
-        // Get transformation matrix
-        aiMatrix4x4 m = scene->mRootNode->mTransformation;
-
-        // Convert to column major
-        m.Transpose();
-        mat4 mt = aiMatrix4ToMat4(m);
-
-        VAO->AddModelMatrix(mt);
-//        VAO->AddModelMatrix(mat4(1.0));
-
-        VertexArrays.push_back(VAO);
-
-
+        MeshArray.push_back( getMesh(n));
     }
+
+
 }
 
-vector<VertexArrayObject*>& AssimpLoader::getVAOs()
+Mesh AssimpLoader::getMesh(int index)
 {
-    return VertexArrays;
+    Mesh GLMesh;
+
+    if(!scene)
+        return GLMesh;
+
+    // Variables
+    struct aiMesh* mesh = scene->mMeshes[index];
+    ShaderMaterial aMat;
+    VertexArrayObject* VAO;
+    string Vert, Frag;
+
+    // Create vector for indices
+    vector<GLuint> Indices;
+    BufferObjectData Bod;
+
+    // Get mesh name
+    GLMesh.mName = mesh->mName.data;
+
+
+    Vert = "shaders/" + GLMesh.mName + ".vert";
+    Frag = "shaders/" + GLMesh.mName + ".frag";
+    GLMesh.AttachShader();
+
+    for(int t = 0; t < mesh->mNumFaces; t++)
+    {
+
+        Indices.push_back(mesh->mFaces[t].mIndices[0]);
+        Indices.push_back(mesh->mFaces[t].mIndices[1]);
+        Indices.push_back(mesh->mFaces[t].mIndices[2]);
+    }
+
+    // Create Vao
+    VAO = new VertexArrayObject();
+    if(!VAO)
+        return GLMesh;
+
+    // Add Positions
+    if(mesh->HasPositions())
+    {
+        vector<GLfloat> Positions;
+        for(int v = 0; v < mesh->mNumVertices; v++)
+        {
+
+            Positions.push_back(mesh->mVertices[v].x * scaleFactor);
+            Positions.push_back(mesh->mVertices[v].y * scaleFactor);
+            Positions.push_back(mesh->mVertices[v].z * scaleFactor);
+        }
+
+        Bod.AddAttribute(Positions, 3, 0);
+    }
+
+    // Add Normals
+    if(mesh->HasNormals())
+    {
+        vector<GLfloat> Normals;
+        for(unsigned v = 0; v < mesh->mNumVertices; v++)
+        {
+            Normals.push_back(mesh->mNormals[v].x);
+            Normals.push_back(mesh->mNormals[v].y);
+            Normals.push_back(mesh->mNormals[v].z);
+        }
+
+
+        Bod.AddAttribute(Normals, 3, 1);
+    }
+
+    // Add texture coordinates
+    if (mesh->HasTextureCoords(0))
+    {
+        vector<GLfloat> UVs;
+        for(unsigned v = 0; v < mesh->mNumVertices; v++)
+        {
+            UVs.push_back(mesh->mTextureCoords[0][v].x);
+            UVs.push_back(mesh->mTextureCoords[0][v].y);
+        }
+
+        Bod.AddAttribute(UVs, 2, 2);
+    }
+    else
+    {
+        vector<GLfloat> Colors(mesh->mNumVertices * 3, 0.9);
+        Bod.AddAttribute(Colors, 3, 2);
+    }
+
+    // Add Tangents and Binormals
+    if (mesh->HasTangentsAndBitangents())
+    {
+        vector<GLfloat> Tangents;
+        vector<GLfloat> Bitangents;
+        for(unsigned v = 0; v < mesh->mNumVertices; v++)
+        {
+            Tangents.push_back(mesh->mTangents[v].x);
+            Tangents.push_back(mesh->mTangents[v].y);
+            Tangents.push_back(mesh->mTangents[v].z);
+
+            Bitangents.push_back(mesh->mBitangents[v].x);
+            Bitangents.push_back(mesh->mBitangents[v].y);
+            Bitangents.push_back(mesh->mBitangents[v].z);
+        }
+        Bod.AddAttribute(Tangents, 3, 3);
+        Bod.AddAttribute(Bitangents, 3, 4);
+    }
+
+    VAO->BindBuffers(Bod, Indices);
+
+    // Get transformation matrix
+    aiMatrix4x4 m = scene->mRootNode->mTransformation;
+
+    // Convert to column major
+    m.Transpose();
+    mat4 mt = aiMatrix4ToMat4(m);
+    mt = gtc::matrix_transform::rotate(mt, 90.0f, vec3(-1,0,0));
+
+    //VAO->AddModelMatrix(mt);
+    GLMesh.SetModelMatrix(mt);
+
+
+    // create material uniform buffer
+    struct aiMaterial *mtl = scene->mMaterials[mesh->mMaterialIndex];
+
+    // Get texture count for mesh, but don't assume they load
+    aMat.texCount = 0;
+    int maxTex = mtl->GetTextureCount(aiTextureType_DIFFUSE);
+
+    aiString texPath;	//contains filename of texture
+
+    for(int t = 0; t < maxTex; t++)
+    {
+        if(AI_SUCCESS == mtl->GetTexture(aiTextureType_DIFFUSE, t, &texPath)){
+            //bind texture
+            unsigned int texId = textureIdMap[texPath.data];
+            GLMesh.texIndices.push_back(texId);
+            aMat.texCount++;
+        }
+        //        else
+        //                aMat.texCount = 0;
+    }
+
+    // Get Uniform values
+
+    // Initialize defaults
+    aMat.diffuse = {0.8, 0.8, 0.8, 1.0};
+    aMat.ambient = {0.2, 0.2, 0.2, 1.0};
+    aMat.specular = {0.1, 0.1, 0.1, 1.0};
+    aMat.emissive = {0.0, 0.0, 0.0, 1.0};
+
+    aiColor4D diffuse;
+    if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
+    {
+        memcpy(aMat.diffuse, &diffuse, sizeof(aiColor4D) );
+    }
+
+    aiColor4D ambient;
+    if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_AMBIENT, &ambient))
+    {
+        memcpy(aMat.ambient, &ambient, sizeof(aiColor4D) );
+    }
+
+    aiColor4D specular;
+    if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_SPECULAR, &specular))
+    {
+        //memcpy(aMat.specular, &specular, sizeof(aiColor4D) );
+    }
+
+    aiColor4D emissive;
+    if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_EMISSIVE, &emissive))
+    {
+        memcpy(aMat.emissive, &emissive, sizeof(aiColor4D) );
+    }
+
+    float shininess = 1.0;
+    unsigned int max;
+    aiGetMaterialFloatArray(mtl, AI_MATKEY_SHININESS, &shininess, &max);
+    aMat.shininess = shininess;
+
+
+
+    GLMesh.SetMaterial(aMat);
+    GLMesh.AttachVAO(VAO);
+
+    return GLMesh;
+}
+
+SceneMesh * AssimpLoader::getScene()
+{
+    return GLSceneMeshes;
 }
 
 int AssimpLoader::LoadGLTextures()
 {
+    if(!scene)
+        return -1;
+
     ILboolean success;
 
     /* initialization of DevIL */
@@ -220,15 +403,18 @@ int AssimpLoader::LoadGLTextures()
 
         if (success) {
             /* Convert image to RGBA */
-            ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+            //ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+            GLuint format = ilGetInteger (IL_IMAGE_FORMAT);
+            GLuint type = ilGetInteger(IL_IMAGE_TYPE);
 
             /* Create and load textures to OpenGL */
-            glBindTexture(GL_TEXTURE_2D, textureIds[i]);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, ilGetInteger(IL_IMAGE_WIDTH),
-                ilGetInteger(IL_IMAGE_HEIGHT), 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                ilGetData());
+            GLuint texID = textureIds[i];
+            glBindTexture(GL_TEXTURE_2D, texID);
+            glTextureParameteriEXT(texID, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureParameteriEXT(texID, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureImage2DEXT(texID, GL_TEXTURE_2D, 0, format, ilGetInteger(IL_IMAGE_WIDTH),
+                                ilGetInteger(IL_IMAGE_HEIGHT), 0, format, type, ilGetData());
+            glGenerateTextureMipmapEXT(texID, GL_TEXTURE_2D);
         }
         else
             printf("Couldn't load Image: %s\n", filename.c_str());
@@ -245,41 +431,18 @@ int AssimpLoader::LoadGLTextures()
     return true;
 }
 
+vector<Mesh> AssimpLoader::getMeshes()
+{
+    return MeshArray;
+}
+
 mat4 aiMatrix4ToMat4(aiMatrix4x4 in)
 {
     mat4 result(1.0);
 
-//    for(int i = 0; i < 4; i++)
-//    {
-////        vec4 resVec;
-////        resVec.x = *in[i*4];
-////        resVec.y = *in[i*4 + 1];
-////        resVec.z = *in[i*4 + 2];
-////        resVec.w = *in[i*4 + 3];
-////        result[i] = resVec;
-//        result[i].x = *in[i*4];
-//        result[i].y = *in[i*4 + 1];
-//        result[i].z = *in[i*4 + 2];
-//        result[i].w = *in[i*4 + 3];
-    //    }
-
-//        result[0].x = in.a1;
-//        result[0].y = in.a2;
-//        result[0].z = in.a3;
-//        result[0].w = in.a4;
-//        result[1].x = in.b1;
-//        result[1].y = in.b2;
-//        result[1].z = in.b3;
-//        result[1].w = in.b4;
-//        result[2].x = in.c1;
-//        result[2].y = in.c2;
-//        result[2].z = in.c3;
-//        result[2].w = in.c4;
-//        result[3].x = in.d1;
-//        result[3].y = in.d2;
-//        result[3].z = in.d3;
-//        result[3].w = in.d4;
     memcpy(&result[0], in[0], sizeof(aiMatrix4x4));
 
     return result;
 }
+
+

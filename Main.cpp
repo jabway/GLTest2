@@ -1,5 +1,5 @@
 #include "Framework.h"
-#include "OGLContext.h"
+#include "GL/OGLContext.h"
 
 
 using namespace std;
@@ -21,7 +21,7 @@ OGLContext *ogc;
 
 int main()
 {
-    logRedirect();
+    //logRedirect();
 
     ogc = new OGLContext();
 
@@ -31,7 +31,6 @@ int main()
         glfwSetWindowSizeCallback( Resize);
         glfwSetKeyCallback(KeyCallback);
         glfwEnable( GLFW_KEY_REPEAT );
-        //glfwEnable( GLFW_STICKY_MOUSE_BUTTONS);
         glfwSetMousePosCallback(MousePosCallback);
         glfwSetMouseButtonCallback(MouseButtonCallback);
         glfwSetMouseWheelCallback(MouseScrollCallback);
@@ -46,7 +45,7 @@ int main()
         ogc->Render();
     }
 
-    logUnredirect();
+    //logUnredirect();
 }
 
 void logRedirect()

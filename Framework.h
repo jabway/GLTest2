@@ -13,9 +13,11 @@
 
 // Include GLM
 #include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_access.hpp>
-#include <glm/gtc/swizzle.hpp>s
+#include <glm/gtc/swizzle.hpp>
 using namespace glm;
 
 #include <iostream>
@@ -25,6 +27,8 @@ using namespace glm;
 #include <map>
 #include <cstring>
 #include <math.h>
+#include <stack>
+#include <typeinfo>
 using namespace std;
 
 // Include IL
