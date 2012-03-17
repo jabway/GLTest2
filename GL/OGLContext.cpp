@@ -196,7 +196,7 @@ void OGLContext::setView(glm::vec3 cameraLocation, glm::vec3 focus,
     // Camera matrix
     mat4 CameraMatrix;
 
-    CameraMatrix       = glm::gtc::matrix_transform::lookAt(
+    CameraMatrix       = glm::lookAt(
         cameraLocation, // Camera is at (4,3,3), in World Space
         focus, // and looks at the origin
         upVector  // Head is up (set to 0,-1,0 to look upside-down)

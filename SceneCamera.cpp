@@ -25,12 +25,12 @@ void SceneCamera::Rotate(vec3 rotVector)
     // Rotate view matrix
     mat4 rotMatrix = mat4(1.0);
 
-//    View = gtc::matrix_transform::rotate(View, rotVector.x, -Axes[1]);
-//    View = gtc::matrix_transform::rotate(View, rotVector.y, -cross(Axes[2], Axes[1]));
-//    View = gtc::matrix_transform::rotate(View, rotVector.z, -Axes[2]);
-    rotMatrix = gtc::matrix_transform::rotate(rotMatrix, rotVector.x, vec3( 0, -1, 0));
-    rotMatrix = gtc::matrix_transform::rotate(rotMatrix, rotVector.y, vec3( -1, 0, 0));
-    rotMatrix = gtc::matrix_transform::rotate(rotMatrix, rotVector.z, vec3(0, 0, -1));
+//    View = glm::rotate(View, rotVector.x, -Axes[1]);
+//    View = glm::rotate(View, rotVector.y, -cross(Axes[2], Axes[1]));
+//    View = glm::rotate(View, rotVector.z, -Axes[2]);
+    rotMatrix = glm::rotate(rotMatrix, rotVector.x, vec3( 0, -1, 0));
+    rotMatrix = glm::rotate(rotMatrix, rotVector.y, vec3( -1, 0, 0));
+    rotMatrix = glm::rotate(rotMatrix, rotVector.z, vec3(0, 0, -1));
 
     View *= rotMatrix;
 
@@ -56,12 +56,12 @@ void SceneCamera::Rotate(vec3 rotVector)
 
 void SceneCamera::setPerspective(float fov, float aspect, float near, float far)
 {
-    Projection = gtc::matrix_transform::perspective(fov, aspect, near, far);
+    Projection = glm::perspective(fov, aspect, near, far);
 }
 
 void SceneCamera::setView(vec3 cameraLocation, vec3 focus, vec3 upVector)
 {
-    View = gtc::matrix_transform::lookAt(cameraLocation, focus, upVector);
+    View = glm::lookAt(cameraLocation, focus, upVector);
     Focus = focus;
     Location = cameraLocation;
 
@@ -76,5 +76,5 @@ void SceneCamera::setView(vec3 cameraLocation, vec3 focus, vec3 upVector)
 void SceneCamera::Zoom(float zFactor)
 {
     if(zFactor > 0.0f || zFactor < 0.0f)
-    View = gtc::matrix_transform::translate(View, (1 - 1/zFactor) * Axes[2]);
+    View = glm::translate(View, (1 - 1/zFactor) * Axes[2]);
 }

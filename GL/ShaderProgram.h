@@ -26,6 +26,8 @@ public:
     void Link();
     void SetMaterial(ShaderMaterial _material);
     void Unbind();
+    void Uniformi(int ref, std::initializer_list<int> args);
+    void Uniformf(int ref, std::initializer_list<float> args);
 
     Matrices mat;
 };

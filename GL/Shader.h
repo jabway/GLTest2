@@ -15,6 +15,7 @@ public:
     void Compile(std::string _filename);
     void Attach(GLuint programID);
     void Detach(GLuint programID);
+
 };
 
 #endif // SHADER_H

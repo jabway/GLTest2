@@ -26,8 +26,10 @@ ShaderProgram::ShaderProgram(string vertexShaderFile, string fragmentShaderFile)
     vs = new VertexShader(vertexShaderFile);
     fs = new FragmentShader(fragmentShaderFile);
 
-    if(!vs || !fs)
+    if(!vs || !fs){
+        throw "Shaders " + vertexShaderFile + " and " + fragmentShaderFile + " not found.";
         return;
+    }
 
     Link();
 }
@@ -142,3 +144,49 @@ void ShaderProgram::Unbind()
 {
     glUseProgram(0);
 }
+
+void ShaderProgram::Uniformi(int ref, std::initializer_list<int> args)
+{
+    vector<int> list(args);
+
+    switch(list.size()){
+    case 1:
+        glUniform1i(ref, list[0]);
+        break;
+    case 2:
+        glUniform2i(ref, list[0], list[1]);
+        break;
+    case 3:
+        glUniform3i(ref, list[0], list[1], list[2]);
+        break;
+    case 4:
+        glUniform4i(ref, list[0], list[1], list[2], list[3]);
+        break;
+    default:
+        throw "glUniformXi called with invalid number of arguments.";
+        break;
+   }
+}
+
+ void ShaderProgram::Uniformf(int ref, std::initializer_list<float> args)
+ {
+     vector<float> list(args);
+
+     switch(list.size()){
+     case 1:
+         glUniform1f(ref, list[0]);
+         break;
+     case 2:
+         glUniform2f(ref, list[0], list[1]);
+         break;
+     case 3:
+         glUniform3f(ref, list[0], list[1], list[2]);
+         break;
+     case 4:
+         glUniform4f(ref, list[0], list[1], list[2], list[3]);
+         break;
+     default:
+         throw "glUniformXf called with invalid number of arguments.";
+         break;
+    }
+ }

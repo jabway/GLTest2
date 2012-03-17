@@ -169,6 +169,9 @@ Mesh AssimpLoader::getMesh(int index)
 
     // Variables
     struct aiMesh* mesh = scene->mMeshes[index];
+    if(!mesh)
+        return GLMesh;
+
     ShaderMaterial aMat;
     VertexArrayObject* VAO;
     string Vert, Frag;
@@ -178,7 +181,12 @@ Mesh AssimpLoader::getMesh(int index)
     BufferObjectData Bod;
 
     // Get mesh name
-    GLMesh.mName = mesh->mName.data;
+    string meshName = "default";
+
+//    if( mesh->mName.data)
+//        meshName = mesh->mName.data;
+
+    GLMesh.mName = meshName;
 
 
     Vert = "shaders/" + GLMesh.mName + ".vert";
@@ -273,7 +281,7 @@ Mesh AssimpLoader::getMesh(int index)
     // Convert to column major
     m.Transpose();
     mat4 mt = aiMatrix4ToMat4(m);
-    mt = gtc::matrix_transform::rotate(mt, 90.0f, vec3(-1,0,0));
+    mt = glm::rotate(mt, 90.0f, vec3(-1,0,0));
 
     //VAO->AddModelMatrix(mt);
     GLMesh.SetModelMatrix(mt);
@@ -303,10 +311,10 @@ Mesh AssimpLoader::getMesh(int index)
     // Get Uniform values
 
     // Initialize defaults
-    aMat.diffuse = {0.8, 0.8, 0.8, 1.0};
-    aMat.ambient = {0.2, 0.2, 0.2, 1.0};
-    aMat.specular = {0.1, 0.1, 0.1, 1.0};
-    aMat.emissive = {0.0, 0.0, 0.0, 1.0};
+    aMat.setDiffuse(0.8, 0.8, 0.8, 1.0);
+    aMat.setAmbient(0.2, 0.2, 0.2, 1.0);
+    aMat.setSpecular(0.1, 0.1, 0.1, 1.0);
+    aMat.setEmissive(0.0, 0.0, 0.0, 1.0);
 
     aiColor4D diffuse;
     if(AI_SUCCESS == aiGetMaterialColor(mtl, AI_MATKEY_COLOR_DIFFUSE, &diffuse))
@@ -366,7 +374,12 @@ int AssimpLoader::LoadGLTextures()
         int texIndex = 0;
         aiString path;  // filename
 
-        aiReturn texFound = scene->mMaterials[m]->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
+        //Check if material exists;
+        aiMaterial* material =  scene->mMaterials[m];
+        if(!material)
+            break;
+
+        aiReturn texFound = material->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
         while (texFound == AI_SUCCESS) {
             //fill map with textures, OpenGL image ids set to 0
             textureIdMap[path.data] = 0;

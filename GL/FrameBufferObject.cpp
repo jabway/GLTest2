@@ -59,9 +59,9 @@ FrameBufferObject::FrameBufferObject(int w, int h, int aaSamples, bool deferred)
     }
 
     float aspect = 1.0f;//(float)width/(float)height;
-    ortho = gtc::matrix_transform::ortho(-aspect,aspect, 1.0f, -1.0f);
+    ortho = glm::ortho(-aspect,aspect, 1.0f, -1.0f);
     model = mat4(1.0);
-    view = gtc::matrix_transform::lookAt( vec3(0,0,1), vec3(0,0,0), vec3(0,1,0));
+    view = glm::lookAt( vec3(0,0,1), vec3(0,0,0), vec3(0,1,0));
 
     // Screen sized rectangle for drawing
     vector<GLfloat> Pos = { -aspect, -1.0f, -1.0f,  aspect, -1.0f, -1.0f,  -aspect, 1.0f, -1.0f,  aspect, 1.0f, -1.0f };

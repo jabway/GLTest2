@@ -22,5 +22,13 @@ SOURCES += \
     SceneMesh.cpp \
     SceneCamera.cpp
 
+LIBS += \
+    -lGLEW \
+    -lGLU \
+    -lGL \
+    -lIL \
+    -lglfw \
+    -lassimp \
+
     include(GL/GL.pri)
     include(Input/Input.pri)

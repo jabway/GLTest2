@@ -26,7 +26,7 @@ Renderer::Renderer()
 
     AssimpLoader aiL;
     //aiL.Import3DFromFile("pc/c001\ -\ Lighning/c001.x360out.dae");
-    aiL.Import3DFromFile("/home/jordan/Documents/lighning_correct.blend");
+    aiL.Import3DFromFile("/home/jordan/R8_Scene/audir8.blend");
     aiL.LoadGLTextures();
     aiL.genVAOsAndUniformBuffer();
 
@@ -156,7 +156,7 @@ void Renderer::setPerspective(float fov, float aspect, float near,
                                    float far)
 {
     // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-    Matrices::Projection = glm::gtc::matrix_transform::perspective(fov, aspect, near, far);
+    Matrices::Projection = glm::perspective(fov, aspect, near, far);
 }
 
 void Renderer::setView(glm::vec3 cameraLocation, glm::vec3 focus,
@@ -165,7 +165,7 @@ void Renderer::setView(glm::vec3 cameraLocation, glm::vec3 focus,
     // Camera matrix
     mat4 CameraMatrix;
 
-    CameraMatrix       = glm::gtc::matrix_transform::lookAt(
+    CameraMatrix       = glm::lookAt(
         cameraLocation, // Camera is at (4,3,3), in World Space
         focus, // and looks at the origin
         upVector  // Head is up (set to 0,-1,0 to look upside-down)
